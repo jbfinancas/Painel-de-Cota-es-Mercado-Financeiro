@@ -3,13 +3,13 @@ export default async function handler(req, res) {
   const apiKey = "0f12688e638943a18c0bec2102cb718c";
 
   const symbols = [
-    "PETR4.SA",
-    "VALE3.SA",
-    "IBOV",
-    "SPX",
-    "IXIC",
+    "PETR4:B3",
+    "VALE3:B3",
+    "IBOV:B3",
+    "SPY",
+    "QQQ",
     "XAU/USD",
-    "WTI"
+    "USOIL"
   ];
 
   try {
