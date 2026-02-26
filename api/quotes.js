@@ -6,9 +6,7 @@ export default async function handler(req, res) {
     "SPY",
     "QQQ",
     "DIA",
-    "IWM",
     "XAU/USD",
-    "EUR/USD",
     "BTC/USD"
   ];
 
