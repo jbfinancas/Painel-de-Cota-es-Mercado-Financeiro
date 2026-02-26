@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Profissional</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    background-color: #0d1117;
+    color: #e6edf3;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h2 {
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 5px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background-color: #161b22;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.alert {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% { background-color: #330000; }
+}
+
+.green { color: #2ecc71; }
+.red { color: #e74c3c; }
+
+canvas {
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🇧🇷 Brasil</h2>
+<div class="grid" id="brasil"></div>
+
+<script>
+const API_KEY = "COLE_SUA_API_AQUI";
+const ALERT_THRESHOLD = 2.0;
+
+const symbols = ["IBOV:INDEX", "PETR4:B3", "VALE3:B3", "SPX:INDEX", "XAU/USD"];
+
+let charts = {};
+
+function playAlert() {
+    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+    audio.play();
+}
+
+async function fetchQuote(symbol) {
+    const url = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${API_KEY}`;
+    const res = await fetch(url);
+    return res.json();
+}
+
+async function fetchHistory(symbol) {
+    const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=5min&outputsize=20&apikey=${API_KEY}`;
+    const res = await fetch(url);
+    return res.json();
+}
+
+function createCard(data) {
+    const percent = parseFloat(data.percent_change);
+    const changeClass = percent >= 0 ? "green" : "red";
+    const alertClass = Math.abs(percent) >= ALERT_THRESHOLD ? "alert" : "";
+
+    if (Math.abs(percent) >= ALERT_THRESHOLD) {
+        playAlert();
+    }
+
+    return `
+        <div class="card ${alertClass}">
+            <div><strong>${data.symbol}</strong></div>
+            <div class="${changeClass}">${percent.toFixed(2)}%</div>
+            <canvas id="chart-${data.symbol.replace(/[^a-zA-Z0-9]/g, '')}" height="80"></canvas>
+        </div>
+    `;
+}
+
+async function updateMarket() {
+    const container = document.getElementById("brasil");
+    container.innerHTML = "";
+
+    for (let symbol of symbols) {
+        try {
+            const quote = await fetchQuote(symbol);
+            container.innerHTML += createCard(quote);
+
+            const history = await fetchHistory(symbol);
+            if (history.values) {
+                const prices = history.values.reverse().map(v => parseFloat(v.close));
+                const ctx = document.getElementById(`chart-${symbol.replace(/[^a-zA-Z0-9]/g, '')}`).getContext("2d");
+
+                new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: prices.map((_, i) => i),
+                        datasets: [{
+                            data: prices,
+                            borderColor: "#2ecc71",
+                            borderWidth: 1,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { display: false } }
+                    }
+                });
+            }
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+}
+
+updateMarket();
+setInterval(updateMarket, 60000);
+</script>
+
+</body>
+</html>
