@@ -1,19 +1,21 @@
 export default async function handler(req, res) {
 
-  const apiKey = "Oay6GI5jATMcfGjq7f7Z9vYDFxwsDCjF";
+  const apiKey = "0f12688e638943a18c0bec2102cb718c";
 
   const symbols = [
     "PETR4.SA",
     "VALE3.SA",
-    "^BVSP",
-    "^GSPC",
-    "GCUSD",
-    "CLUSD"
+    "IBOV",
+    "SPX",
+    "IXIC",
+    "XAU/USD",
+    "WTI"
   ];
 
   try {
+
     const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/quote/${symbols.join(",")}?apikey=${apiKey}`
+      `https://api.twelvedata.com/quote?symbol=${symbols.join(",")}&apikey=${apiKey}`
     );
 
     const data = await response.json();
