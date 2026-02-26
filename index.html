@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel Global Enxuto</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+h1 {
+  text-align: center;
+  padding: 20px;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.green { color: #22c55e; }
+.red { color: #ef4444; }
+
+canvas {
+  background: #1e293b;
+  margin: 20px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Painel Global</h1>
+
+<div class="container" id="market"></div>
+
+<canvas id="chart" height="100"></canvas>
+
+<script>
+
+let chart;
+let isFetching = false;
+
+const nomeBonito = {
+  "SPY": "S&P 500",
+  "QQQ": "NASDAQ",
+  "DIA": "DOW JONES",
+  "XAU/USD": "OURO",
+  "BTC/USD": "BITCOIN"
+};
+
+async function fetchData() {
+
+  if (isFetching) return;
+  isFetching = true;
+
+  try {
+
+    const response = await fetch("/api/quotes");
+    const data = await response.json();
+
+    const container = document.getElementById("market");
+    container.innerHTML = "";
+
+    const labels = [];
+    const prices = [];
+
+    Object.values(data).forEach(asset => {
+
+      if (!asset || asset.status === "error") return;
+
+      const percent = parseFloat(asset.percent_change) || 0;
+      const price = parseFloat(asset.close) || 0;
+      const color = percent >= 0 ? "green" : "red";
+
+      labels.push(nomeBonito[asset.symbol] || asset.symbol);
+      prices.push(price);
+
+      container.innerHTML += `
+        <div class="card">
+          <h2>${nomeBonito[asset.symbol] || asset.symbol}</h2>
+          <p>${price}</p>
+          <p class="${color}">${percent.toFixed(2)}%</p>
+        </div>
+      `;
+    });
+
+    updateChart(labels, prices);
+
+  } catch (error) {
+    console.error("Erro ao buscar dados");
+  }
+
+  isFetching = false;
+}
+
+function updateChart(labels, prices) {
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = prices;
+    chart.update();
+    return;
+  }
+
+  const ctx = document.getElementById("chart").getContext("2d");
+
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Preço Atual",
+        data: prices
+      }]
+    }
+  });
+}
+
+fetchData();
+setInterval(fetchData, 120000); // 2 minutos
+
+</script>
+
+</body>
+</html>
